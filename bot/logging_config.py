@@ -14,7 +14,7 @@ LOG_DIR = Path(__file__).resolve().parent.parent / "logs"
 LOG_FILE = LOG_DIR / "trading_bot.log"
 
 
-def setup_logging(level: int = logging.INFO) -> logging.Logger:
+def setup_logging(level: int = logging.DEBUG) -> logging.Logger:
     """Configure and return the bot's shared logger.
 
     Logs go to both a rotating file (logs/trading_bot.log) and the

@@ -81,11 +81,11 @@ def place_futures_order(
         order_kwargs["price"] = price
         order_kwargs["timeInForce"] = "GTC"  # Good-Til-Canceled — standard default for limit orders
 
-    logger.info("Submitting order request: %s", order_kwargs)
+    logger.debug("Submitting order request: %s", order_kwargs)
 
     try:
         response = client.futures_create_order(**order_kwargs)
-        logger.info("Order response: %s", response)
+        logger.debug("Initial submission response (pre-match): %s", response)
     except (BinanceAPIException, BinanceRequestException) as exc:
         logger.error("Binance API error while placing order %s: %s", order_kwargs, exc)
         raise BinanceClientError(f"Binance API error: {exc}") from exc
@@ -97,7 +97,7 @@ def place_futures_order(
     try:
         time.sleep(1.0)
         query_response = client.futures_get_order(symbol=symbol, orderId=response.get("orderId"))
-        logger.info("Follow-up order status query response: %s", query_response)
+        logger.debug("Confirmed fill status (post-verification): %s", query_response)
         return query_response
     except Exception as exc:
         logger.warning("Follow-up order status query failed: %s. Falling back to initial response.", exc)
