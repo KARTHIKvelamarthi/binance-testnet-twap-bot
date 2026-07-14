@@ -1,11 +1,80 @@
 # Binance Futures Testnet Trading Bot
 
-A small, structured Python CLI for placing MARKET and LIMIT orders on
-Binance Futures Testnet (USDT-M), with input validation, structured
-logging, and clean error handling.
+A robust, structured Python CLI for placing **MARKET**, **LIMIT**, and **TWAP** orders on the Binance Futures Testnet (USDT-M). It features guided interactive input entry, strict client-side validation with real-time typo corrections, an active order status polling loop, clean single-line logs, and a completely silent console interface.
 
 > ⚠️ Uses **Binance Futures Testnet** only (`https://testnet.binancefuture.com`).
 > No real funds or real orders are involved.
+
+---
+
+## Features & UX Highlights
+
+### 1. Dual Execution Modes
+*   **Flag-driven mode:** Provide order details directly via CLI flags for scripting and automation (e.g., `python cli.py --symbol BTCUSDT --side BUY --type MARKET --quantity 0.01 -y`).
+*   **Guided Interactive mode:** Run the script without arguments (`python cli.py`) to launch a guided, step-by-step terminal interface.
+
+### 2. Sane CLI Validation & Typo Corrections
+The interactive CLI checks inputs in real-time. If you make a typo, it catches the validation error, displays the accepted options, and reprompts you without crashing:
+```
+Enter symbol (e.g. BTCUSDT): btcusd
+Enter side (BUY/SELL): vye
+Invalid input: Side must be one of ['BUY', 'SELL'], got 'VYE'. Please try again.
+Enter side (BUY/SELL): buy
+Enter order type (MARKET/LIMIT/TWAP): mrket
+Invalid input: Order type must be one of ['LIMIT', 'MARKET', 'TWAP'], got 'MRKET'. Please try again.
+```
+
+### 3. Safety Confirmation Prompt
+Every order execution requires explicit approval to prevent fat-finger mistakes. A summary card of the request is printed, followed by a `[y/N]` prompt defaulting to `No`:
+```
+--- Order Request Summary ---
+  Symbol:     BTCUSDT
+  Side:       BUY
+  Type:       MARKET
+  Quantity:   0.01
+------------------------------
+
+Confirm and submit? [y/N]: y
+```
+*Use the `-y` or `--yes` flag to bypass this confirmation in automated environments.*
+
+### 4. Active Status Verification Polling
+Binance returns a status of `NEW` immediately upon order acceptance, meaning the executed quantity initially shows as `0.0000`. To log and display the true execution details:
+*   The bot implements a polling loop checking the order status up to **5 times** (at 1-second intervals).
+*   If the order matches and fills on the exchange (e.g. `MARKET` or marketable `LIMIT` orders), it breaks early and displays the final executed quantity and average price.
+*   If the order remains open (e.g. a `LIMIT` order below/above current price), it finishes polling and gracefully displays the current open `NEW` status.
+
+---
+
+## Logging & Console Design System
+
+To ensure **high logging quality** ("useful, not noisy"), the system separates terminal visual outputs from deep audit logs:
+
+### 1. Completely Silent Console (Terminal)
+The root logger level is set to `DEBUG` to write all events to the file. However, the terminal console handler is set to `WARNING`. 
+*   No standard `INFO` or `DEBUG` logs clutter the CLI screen during runs.
+*   The terminal output consists purely of user-friendly summary blocks and success/error signs:
+```
+✅ Order placed successfully.
+  Order ID:      21697614683
+  Status:        FILLED
+  Executed Qty:  0.0100
+  Avg Price:     64265.000000
+```
+
+### 2. Clean, Structured Single-line Logs
+Raw Binance API response dumps have been completely removed from both console and file handlers. They are replaced by clean, structured, single-line event logs showing the lifecycle of the order:
+*   `Submitting order: BUY 0.01 BTCUSDT MARKET`
+*   `Order accepted: id=21697614683 status=NEW`
+*   `Order confirmed filled: id=21697614683 executedQty=0.0100 avgPrice=64265.000000`
+
+### 3. Run Separators (`====================`)
+At the end of every bot run, a divider line of `80` equals signs is written. We created a custom `RunSeparatorFormatter` to bypass standard log templates for this separator, ensuring it prints as a clean divider line **without timestamps or metadata prefixes**:
+```
+2026-07-14 20:32:59,962 | INFO     | trading_bot | Order accepted: id=21697614683 status=NEW
+2026-07-14 20:33:01,089 | INFO     | trading_bot | Order confirmed filled: id=21697614683 executedQty=0.0100 avgPrice=64265.000000
+================================================================================
+```
 
 ---
 
@@ -15,120 +84,63 @@ logging, and clean error handling.
 trading_bot/
   bot/
     __init__.py
-    client.py          # Binance API client wrapper (Futures Testnet only)
-    orders.py           # Order execution orchestration
-    validators.py        # Input validation, independent of CLI/API layers
-    logging_config.py     # Rotating file + console logging setup
-  cli.py                 # CLI entry point (argparse)
-  requirements.txt
-  logs/                   # Generated at runtime — request/response/error logs
+    client.py          # Binance API client wrapper & order status verification
+    orders.py          # Order execution orchestration
+    twap.py            # TWAP slice execution & logging orchestration
+    validators.py      # Input validation (symbol, side, quantity, price, TWAP params)
+    logging_config.py  # RunSeparatorFormatter, console (WARNING) and file (DEBUG) setup
+  cli.py               # CLI entry point (argparse & Interactive guided wizard)
+  requirements.txt     # Dependencies (python-binance)
+  logs/
+    trading_bot.log    # Clean structured audit log file
   README.md
 ```
 
-Each layer has one job: `validators.py` only checks input is sane,
-`client.py` only talks to Binance, `orders.py` only orchestrates the two
-and shapes the result, and `cli.py` only handles user interaction. This
-keeps each file independently testable and means the API layer could be
-reused (e.g. behind a future web endpoint) without touching CLI code.
-
 ---
 
-## Setup
+## Setup & Run Instructions
 
-### 1. Create a Binance Futures Testnet account & API keys
-
-1. Go to https://testnet.binancefuture.com and log in (GitHub login supported).
-2. Generate an API Key + Secret from the testnet dashboard.
-3. Your testnet account starts with test USDT balance automatically.
-
-### 2. Install dependencies
-
+### 1. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Set your API credentials as environment variables
-
-Credentials are read from environment variables rather than CLI flags, so
-they never end up in shell history or logs.
-
+### 2. Set API Credentials as Environment Variables
 ```bash
 # Linux/macOS
-export BINANCE_TESTNET_API_KEY="your_key_here"
-export BINANCE_TESTNET_API_SECRET="your_secret_here"
+export BINANCE_TESTNET_API_KEY="your_api_key"
+export BINANCE_TESTNET_API_SECRET="your_api_secret"
 
 # Windows PowerShell
-$env:BINANCE_TESTNET_API_KEY="your_key_here"
-$env:BINANCE_TESTNET_API_SECRET="your_secret_here"
+$env:BINANCE_TESTNET_API_KEY="your_api_key"
+$env:BINANCE_TESTNET_API_SECRET="your_api_secret"
 ```
 
----
+### 3. Place Orders
 
-## Running
-
-### Market order
-
+#### Market Order
 ```bash
-python cli.py --symbol BTCUSDT --side BUY --type MARKET --quantity 0.01
+python cli.py --symbol BTCUSDT --side BUY --type MARKET --quantity 0.01 -y
 ```
 
-### Limit order
-
+#### Limit Order (Good-Til-Canceled default)
 ```bash
-python cli.py --symbol BTCUSDT --side SELL --type LIMIT --quantity 0.01 --price 60000
+python cli.py --symbol BTCUSDT --side SELL --type LIMIT --quantity 0.01 --price 65000.0 -y
 ```
 
-### TWAP order
-
+#### TWAP Order (Splits quantity over duration)
 ```bash
-python cli.py --symbol BTCUSDT --side BUY --type TWAP --quantity 0.05 --duration 60 --slices 5
+python cli.py --symbol BTCUSDT --side BUY --type TWAP --quantity 0.03 --duration 10 --slices 3 -y
 ```
 
-Every run prints:
-- an order request summary (what's about to be sent)
-- the order response (order ID, status, executed quantity, average price)
-- a clear ✅ success / ❌ failure message
-
-Full request/response/error detail is additionally written to `logs/trading_bot.log`.
-
 ---
 
-## Error handling
+## Error Handling
 
-The bot handles three distinct failure categories, each with a clear message:
+Errors are normalized across all paths to display human-readable descriptions rather than raw stack traces:
 
-| Failure type | Example | Where it's caught |
-|---|---|---|
-| Invalid input | negative quantity, missing price for LIMIT, bad side value | `validators.py`, before any network call |
-| Binance API error | invalid symbol, insufficient testnet balance | `client.py`, wraps `BinanceAPIException` |
-| Network/unexpected error | timeout, connection failure | `client.py`, catches and re-raises as `BinanceClientError` |
-
-All three are logged to `logs/trading_bot.log` with full detail, while the
-CLI only shows a short, human-readable message.
-
----
-
-## Assumptions
-
-- Only `MARKET` and `LIMIT` order types are implemented, per the core
-  requirements; no bonus order type (Stop-Limit/OCO/TWAP/Grid) is included
-  in this submission.
-- Quantity and price precision/step-size rules (Binance's `LOT_SIZE` /
-  `PRICE_FILTER` exchange filters) are not independently validated
-  client-side beyond "must be a positive number" — Binance's own API will
-  reject a request that violates exchange filters, and that rejection is
-  surfaced via the standard error-handling path above rather than
-  duplicated client-side.
-- `timeInForce=GTC` (Good-Til-Canceled) is used as the default for LIMIT
-  orders, since the task didn't specify a time-in-force policy and GTC is
-  the standard default.
-- Credentials are expected as environment variables, not CLI arguments or
-  a committed config file, to avoid accidentally leaking them in shell
-  history or version control.
-
----
-
-## Sample logs
-
-See `logs/trading_bot.log` for real request/response logs from a
-successful MARKET order and a successful LIMIT order placed on Testnet.
+| Failure Type | Example | Visual Console Output | Log File Recording |
+|---|---|---|---|
+| **Invalid Input** | negative quantity, missing prices | `❌ Invalid input: Quantity must be positive...` | `ERROR | Input validation failed: ...` |
+| **Binance API Rejections** | invalid symbol, price out of bands | `❌ Order failed. Reason: APIError(code=-1121)...` | `ERROR | Order rejected: reason=APIError...` |
+| **Network/timeouts** | connection failure | `❌ Binance API error: Connection timeout...` | `ERROR | Order rejected: reason=Connection...` |
