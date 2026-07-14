@@ -72,6 +72,7 @@ def print_summary(request) -> None:
     if request.slices is not None:
         print(f"  Slices:     {request.slices}")
     print("------------------------------\n")
+    sys.stdout.flush()
 
 
 def print_result(result) -> None:
@@ -84,6 +85,7 @@ def print_result(result) -> None:
     else:
         safe_print("❌ Order failed.")
         print(f"  Reason: {result.error_message}")
+    sys.stdout.flush()
 
 
 def run_interactive_mode() -> OrderRequest:
@@ -176,68 +178,71 @@ def run_interactive_mode() -> OrderRequest:
 def main() -> int:
     logger = setup_logging()
     
-    skip_confirm = False
-    if len(sys.argv) == 1:
-        try:
-            request = run_interactive_mode()
-        except (KeyboardInterrupt, EOFError):
-            print("\nOrder entry cancelled.")
-            return 0
-    else:
-        parser = build_parser()
-        args = parser.parse_args()
-        skip_confirm = args.yes
+    try:
+        skip_confirm = False
+        if len(sys.argv) == 1:
+            try:
+                request = run_interactive_mode()
+            except (KeyboardInterrupt, EOFError):
+                print("\nOrder entry cancelled.")
+                return 0
+        else:
+            parser = build_parser()
+            args = parser.parse_args()
+            skip_confirm = args.yes
+
+            try:
+                request = validate_order(
+                    symbol=args.symbol,
+                    side=args.side,
+                    order_type=args.order_type,
+                    quantity=args.quantity,
+                    price=args.price,
+                    duration=args.duration,
+                    slices=args.slices,
+                )
+            except ValidationError as exc:
+                logger.error("Input validation failed: %s", exc)
+                safe_print(f"❌ Invalid input: {exc}")
+                return 1
+
+        print_summary(request)
+
+        if not skip_confirm:
+            try:
+                confirm = input("Confirm and submit? [y/N]: ").strip().lower()
+                if confirm not in ["y", "yes"]:
+                    print("Order cancelled.")
+                    return 0
+            except (KeyboardInterrupt, EOFError):
+                print("\nOrder cancelled.")
+                return 0
 
         try:
-            request = validate_order(
-                symbol=args.symbol,
-                side=args.side,
-                order_type=args.order_type,
-                quantity=args.quantity,
-                price=args.price,
-                duration=args.duration,
-                slices=args.slices,
-            )
-        except ValidationError as exc:
-            logger.error("Input validation failed: %s", exc)
-            safe_print(f"❌ Invalid input: {exc}")
+            client = get_client()
+        except BinanceClientError as exc:
+            logger.error("Client initialization failed: %s", exc)
+            safe_print(f"❌ {exc}")
             return 1
 
-    print_summary(request)
-
-    if not skip_confirm:
-        try:
-            confirm = input("Confirm and submit? [y/N]: ").strip().lower()
-            if confirm not in ["y", "yes"]:
-                print("Order cancelled.")
-                return 0
-        except (KeyboardInterrupt, EOFError):
-            print("\nOrder cancelled.")
-            return 0
-
-    try:
-        client = get_client()
-    except BinanceClientError as exc:
-        logger.error("Client initialization failed: %s", exc)
-        safe_print(f"❌ {exc}")
-        return 1
-
-    if request.order_type == "TWAP":
-        result = execute_twap(client, request)
-        print("\n--- TWAP Execution Summary ---")
-        print(f"  Slices Succeeded: {result.slices_succeeded}/{request.slices}")
-        print(f"  Slices Failed:    {result.slices_failed}/{request.slices}")
-        print(f"  Total Executed:   {result.total_executed_qty}")
-        print("------------------------------\n")
-        if result.success:
-            safe_print("✅ TWAP completed successfully.")
+        if request.order_type == "TWAP":
+            result = execute_twap(client, request)
+            print("\n--- TWAP Execution Summary ---")
+            print(f"  Slices Succeeded: {result.slices_succeeded}/{request.slices}")
+            print(f"  Slices Failed:    {result.slices_failed}/{request.slices}")
+            print(f"  Total Executed:   {result.total_executed_qty}")
+            print("------------------------------\n")
+            if result.success:
+                safe_print("✅ TWAP completed successfully.")
+            else:
+                safe_print("❌ TWAP failed (all slices failed).")
+            return 0 if result.success else 1
         else:
-            safe_print("❌ TWAP failed (all slices failed).")
-        return 0 if result.success else 1
-    else:
-        result = execute_order(client, request)
-        print_result(result)
-        return 0 if result.success else 1
+            result = execute_order(client, request)
+            print_result(result)
+            return 0 if result.success else 1
+    finally:
+        logger.info("=" * 80)
 
 
 if __name__ == "__main__":

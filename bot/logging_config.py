@@ -14,7 +14,15 @@ LOG_DIR = Path(__file__).resolve().parent.parent / "logs"
 LOG_FILE = LOG_DIR / "trading_bot.log"
 
 
-def setup_logging(level: int = logging.DEBUG) -> logging.Logger:
+class RunSeparatorFormatter(logging.Formatter):
+    """Custom formatter that writes log separator lines without prefix metadata."""
+    def format(self, record: logging.LogRecord) -> str:
+        if record.msg == "=" * 80:
+            return record.msg
+        return super().format(record)
+
+
+def setup_logging(level: int = logging.INFO) -> logging.Logger:
     """Configure and return the bot's shared logger.
 
     Logs go to both a rotating file (logs/trading_bot.log) and the
@@ -24,16 +32,16 @@ def setup_logging(level: int = logging.DEBUG) -> logging.Logger:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
     logger = logging.getLogger("trading_bot")
-    logger.setLevel(level)
+    logger.setLevel(logging.DEBUG)
 
     # Avoid adding duplicate handlers if setup_logging() is called more than once
     if logger.handlers:
         return logger
 
-    file_formatter = logging.Formatter(
+    file_formatter = RunSeparatorFormatter(
         "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
     )
-    console_formatter = logging.Formatter("%(levelname)-8s | %(message)s")
+    console_formatter = RunSeparatorFormatter("%(levelname)-8s | %(message)s")
 
     file_handler = RotatingFileHandler(
         LOG_FILE, maxBytes=2_000_000, backupCount=3, encoding="utf-8"
@@ -43,7 +51,7 @@ def setup_logging(level: int = logging.DEBUG) -> logging.Logger:
 
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(console_formatter)
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(logging.WARNING)
 
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)

@@ -27,7 +27,7 @@ def execute_twap(client, request: OrderRequest) -> TwapResult:
         if i > 0:
             time.sleep(interval)
 
-        logger.info(f"Placing TWAP slice {i + 1}/{request.slices} with quantity {slice_qty}")
+        logger.info(f"TWAP slice {i + 1}/{request.slices} submitted: {slice_qty:.4f} {request.symbol}")
         try:
             response = place_futures_order(
                 client=client,
@@ -35,24 +35,28 @@ def execute_twap(client, request: OrderRequest) -> TwapResult:
                 side=request.side,
                 order_type="MARKET",
                 quantity=slice_qty,
+                is_twap=True,
             )
             slices_succeeded += 1
             exec_qty_str = response.get("executedQty", "0")
+            avg_price_str = response.get("avgPrice", "0.00")
+            
             try:
-                total_executed_qty += float(exec_qty_str)
+                exec_qty_val = float(exec_qty_str)
+                avg_price_val = float(avg_price_str)
+                logger.info(f"TWAP slice {i + 1}/{request.slices} confirmed filled: {exec_qty_val:.4f} @ {avg_price_val:.2f}")
+                total_executed_qty += exec_qty_val
             except ValueError:
+                logger.info(f"TWAP slice {i + 1}/{request.slices} confirmed filled: {exec_qty_str} @ {avg_price_str}")
                 total_executed_qty += slice_qty
         except BinanceClientError as exc:
             # We don't abort on a single slice failure so that transient network glitches
             # or brief API rejects don't ruin a long-running TWAP execution completely.
             slices_failed += 1
-            logger.error(f"Slice {i + 1} failed: {exc}")
+            logger.error(f"TWAP slice {i + 1}/{request.slices} rejected: reason={exc}")
 
     # Log execution summary
-    logger.info("TWAP execution completed.")
-    logger.info(f"Succeeded slices: {slices_succeeded}/{request.slices}")
-    logger.info(f"Failed slices: {slices_failed}/{request.slices}")
-    logger.info(f"Total quantity executed: {total_executed_qty}")
+    logger.info(f"TWAP summary: {slices_succeeded}/{request.slices} slices filled, total executed {total_executed_qty:.4f} {request.symbol}")
 
     return TwapResult(
         success=slices_succeeded > 0,

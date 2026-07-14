@@ -49,5 +49,4 @@ def execute_order(client, request: OrderRequest) -> OrderResult:
             raw_response=response,
         )
     except BinanceClientError as exc:
-        logger.error("Order execution failed: %s", exc)
         return OrderResult(success=False, error_message=str(exc))

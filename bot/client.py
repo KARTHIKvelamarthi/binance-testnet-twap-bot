@@ -63,6 +63,7 @@ def place_futures_order(
     order_type: str,
     quantity: float,
     price: Optional[float] = None,
+    is_twap: bool = False,
 ) -> dict:
     """Place a MARKET or LIMIT order on Binance Futures Testnet and return the raw response.
 
@@ -81,24 +82,57 @@ def place_futures_order(
         order_kwargs["price"] = price
         order_kwargs["timeInForce"] = "GTC"  # Good-Til-Canceled — standard default for limit orders
 
-    logger.debug("Submitting order request: %s", order_kwargs)
+    # Clean structured single-line submission log
+    if not is_twap:
+        if order_type == "LIMIT":
+            logger.info("Submitting order: %s %s %s LIMIT @ %s", side, quantity, symbol, price)
+        else:
+            logger.info("Submitting order: %s %s %s %s", side, quantity, symbol, order_type)
 
     try:
         response = client.futures_create_order(**order_kwargs)
-        logger.debug("Initial submission response (pre-match): %s", response)
-    except (BinanceAPIException, BinanceRequestException) as exc:
-        logger.error("Binance API error while placing order %s: %s", order_kwargs, exc)
-        raise BinanceClientError(f"Binance API error: {exc}") from exc
-    except Exception as exc:  # network failures, timeouts, etc.
-        logger.error("Unexpected/network error while placing order %s: %s", order_kwargs, exc)
-        raise BinanceClientError(f"Network or unexpected error: {exc}") from exc
+        if not is_twap:
+            logger.info(
+                "Order accepted: id=%s status=%s",
+                response.get("orderId"),
+                response.get("status"),
+            )
+    except Exception as exc:
+        clean_msg = str(exc)
+        # Avoid printing duplicate or noisy traceback log
+        logger.error("Order rejected: reason=%s", clean_msg)
+        raise BinanceClientError(clean_msg) from exc
 
-    # Query the order status a moment after submission to retrieve final fills/status
+    # Query the order status in a loop to retrieve final fills/status
     try:
-        time.sleep(1.0)
-        query_response = client.futures_get_order(symbol=symbol, orderId=response.get("orderId"))
-        logger.debug("Confirmed fill status (post-verification): %s", query_response)
+        query_response = response
+        for attempt in range(5):
+            time.sleep(1.0)
+            query_response = client.futures_get_order(symbol=symbol, orderId=response.get("orderId"))
+            status = query_response.get("status")
+            if status in ["FILLED", "CANCELED", "EXPIRED"]:
+                break
+
+        if not is_twap:
+            status = query_response.get("status")
+            executed_qty = query_response.get("executedQty", "0.0000")
+            avg_price = query_response.get("avgPrice", "0.00")
+            if status == "FILLED":
+                logger.info(
+                    "Order confirmed filled: id=%s executedQty=%s avgPrice=%s",
+                    query_response.get("orderId"),
+                    executed_qty,
+                    avg_price,
+                )
+            else:
+                logger.info(
+                    "Order status: id=%s status=%s executedQty=%s avgPrice=%s",
+                    query_response.get("orderId"),
+                    status,
+                    executed_qty,
+                    avg_price,
+                )
         return query_response
     except Exception as exc:
-        logger.warning("Follow-up order status query failed: %s. Falling back to initial response.", exc)
+        logger.warning("Follow-up query failed: reason=%s", exc)
         return response
