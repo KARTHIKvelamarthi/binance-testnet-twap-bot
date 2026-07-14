@@ -78,6 +78,12 @@ python cli.py --symbol BTCUSDT --side BUY --type MARKET --quantity 0.01
 python cli.py --symbol BTCUSDT --side SELL --type LIMIT --quantity 0.01 --price 60000
 ```
 
+### TWAP order
+
+```bash
+python cli.py --symbol BTCUSDT --side BUY --type TWAP --quantity 0.05 --duration 60 --slices 5
+```
+
 Every run prints:
 - an order request summary (what's about to be sent)
 - the order response (order ID, status, executed quantity, average price)

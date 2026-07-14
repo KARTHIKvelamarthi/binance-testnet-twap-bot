@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 VALID_SIDES = {"BUY", "SELL"}
-VALID_ORDER_TYPES = {"MARKET", "LIMIT"}
+VALID_ORDER_TYPES = {"MARKET", "LIMIT", "TWAP"}
 
 
 class ValidationError(Exception):
@@ -25,6 +25,8 @@ class OrderRequest:
     order_type: str
     quantity: float
     price: Optional[float] = None
+    duration: Optional[int] = None
+    slices: Optional[int] = None
 
 
 def validate_order(
@@ -32,7 +34,9 @@ def validate_order(
     side: str,
     order_type: str,
     quantity: float,
-    price: Optional[float],
+    price: Optional[float] = None,
+    duration: Optional[int] = None,
+    slices: Optional[int] = None,
 ) -> OrderRequest:
     """Validate raw CLI input and return a clean OrderRequest, or raise ValidationError.
 
@@ -70,11 +74,50 @@ def validate_order(
             raise ValidationError(f"Price must be a number, got '{price}'.")
         if price <= 0:
             raise ValidationError(f"Price must be positive, got {price}.")
+    elif order_type == "TWAP":
+        if duration is None:
+            raise ValidationError("Duration is required for TWAP orders.")
+        try:
+            duration_int = int(duration)
+            if float(duration_int) != float(duration):
+                raise ValueError()
+        except (TypeError, ValueError):
+            raise ValidationError(f"Duration must be an integer, got '{duration}'.")
+        if duration_int <= 0:
+            raise ValidationError(f"Duration must be positive, got {duration_int}.")
+
+        if slices is None:
+            raise ValidationError("Slices is required for TWAP orders.")
+        try:
+            slices_int = int(slices)
+            if float(slices_int) != float(slices):
+                raise ValueError()
+        except (TypeError, ValueError):
+            raise ValidationError(f"Slices must be an integer, got '{slices}'.")
+        if slices_int <= 0:
+            raise ValidationError(f"Slices must be positive, got {slices_int}.")
+
+        if duration_int < slices_int:
+            raise ValidationError(
+                f"Duration ({duration_int}) must be at least as long as slices ({slices_int})."
+            )
+
+        price = None
+        duration = duration_int
+        slices = slices_int
     else:
         # MARKET orders should not carry a price — ignore if one was passed,
         # rather than silently sending it to the API where it's meaningless.
         price = None
+        duration = None
+        slices = None
 
     return OrderRequest(
-        symbol=symbol, side=side, order_type=order_type, quantity=quantity, price=price
+        symbol=symbol,
+        side=side,
+        order_type=order_type,
+        quantity=quantity,
+        price=price,
+        duration=duration,
+        slices=slices,
     )
