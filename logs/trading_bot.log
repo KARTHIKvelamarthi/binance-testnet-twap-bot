@@ -1,0 +1,56 @@
+2026-07-14 20:41:31,048 | DEBUG    | trading_bot | Server time sync complete. Offset: -1444 ms
+2026-07-14 20:41:31,050 | DEBUG    | trading_bot | Binance Futures Testnet client initialized (base_url=https://testnet.binancefuture.com)
+2026-07-14 20:41:31,050 | INFO     | trading_bot | Submitting order: BUY 0.01 BTCUSDT MARKET
+2026-07-14 20:41:31,290 | INFO     | trading_bot | Order accepted: id=21699029138 status=NEW
+2026-07-14 20:41:32,584 | INFO     | trading_bot | Order confirmed filled: id=21699029138 executedQty=0.0100 avgPrice=64281.300000
+================================================================================
+2026-07-14 20:41:46,331 | DEBUG    | trading_bot | Server time sync complete. Offset: -1446 ms
+2026-07-14 20:41:46,333 | DEBUG    | trading_bot | Binance Futures Testnet client initialized (base_url=https://testnet.binancefuture.com)
+2026-07-14 20:41:46,334 | INFO     | trading_bot | Submitting order: BUY 0.01 BTCUSDT LIMIT @ 70000.0
+2026-07-14 20:41:46,557 | ERROR    | trading_bot | Order rejected: reason=APIError(code=-4016): Limit price can't be higher than 67490.66.
+================================================================================
+2026-07-14 20:42:05,116 | DEBUG    | trading_bot | Server time sync complete. Offset: -1445 ms
+2026-07-14 20:42:05,118 | DEBUG    | trading_bot | Binance Futures Testnet client initialized (base_url=https://testnet.binancefuture.com)
+2026-07-14 20:42:05,118 | INFO     | trading_bot | Submitting order: BUY 0.01 BTCUSDT LIMIT @ 65000.0
+2026-07-14 20:42:05,341 | INFO     | trading_bot | Order accepted: id=21699118355 status=NEW
+2026-07-14 20:42:06,580 | INFO     | trading_bot | Order confirmed filled: id=21699118355 executedQty=0.0100 avgPrice=64281.300000
+================================================================================
+2026-07-14 20:42:13,658 | DEBUG    | trading_bot | Server time sync complete. Offset: -1443 ms
+2026-07-14 20:42:13,659 | DEBUG    | trading_bot | Binance Futures Testnet client initialized (base_url=https://testnet.binancefuture.com)
+2026-07-14 20:42:13,659 | INFO     | trading_bot | Submitting order: BUY 0.01 BTCUSDT LIMIT @ 50000.0
+2026-07-14 20:42:13,835 | INFO     | trading_bot | Order accepted: id=21699130669 status=NEW
+2026-07-14 20:42:19,586 | INFO     | trading_bot | Order status: id=21699130669 status=NEW executedQty=0.0000 avgPrice=0.00
+================================================================================
+2026-07-14 20:42:29,053 | DEBUG    | trading_bot | Server time sync complete. Offset: -1443 ms
+2026-07-14 20:42:29,053 | DEBUG    | trading_bot | Binance Futures Testnet client initialized (base_url=https://testnet.binancefuture.com)
+2026-07-14 20:42:29,055 | INFO     | trading_bot | Submitting order: SELL 0.01 BTCUSDT MARKET
+2026-07-14 20:42:29,238 | INFO     | trading_bot | Order accepted: id=21699178228 status=NEW
+2026-07-14 20:42:30,367 | INFO     | trading_bot | Order confirmed filled: id=21699178228 executedQty=0.0100 avgPrice=64248.500000
+================================================================================
+2026-07-14 20:43:48,008 | DEBUG    | trading_bot | Server time sync complete. Offset: -1441 ms
+2026-07-14 20:43:48,010 | DEBUG    | trading_bot | Binance Futures Testnet client initialized (base_url=https://testnet.binancefuture.com)
+2026-07-14 20:43:48,010 | INFO     | trading_bot | Submitting order: SELL 0.01 BTCUSDT LIMIT @ 65000.0
+2026-07-14 20:43:48,196 | INFO     | trading_bot | Order accepted: id=21699411617 status=NEW
+2026-07-14 20:43:53,982 | INFO     | trading_bot | Order status: id=21699411617 status=NEW executedQty=0.0000 avgPrice=0.00
+================================================================================
+2026-07-14 20:47:29,789 | DEBUG    | trading_bot | Server time sync complete. Offset: -1432 ms
+2026-07-14 20:47:29,789 | DEBUG    | trading_bot | Binance Futures Testnet client initialized (base_url=https://testnet.binancefuture.com)
+2026-07-14 20:47:29,789 | INFO     | trading_bot | Submitting order: SELL 0.01 BTCUSDT LIMIT @ 60000.0
+2026-07-14 20:47:29,996 | ERROR    | trading_bot | Order rejected: reason=APIError(code=-4024): Limit price can't be lower than 61027.63.
+================================================================================
+2026-07-14 20:47:37,377 | DEBUG    | trading_bot | Server time sync complete. Offset: -1462 ms
+2026-07-14 20:47:37,378 | DEBUG    | trading_bot | Binance Futures Testnet client initialized (base_url=https://testnet.binancefuture.com)
+2026-07-14 20:47:37,379 | INFO     | trading_bot | Submitting order: SELL 0.01 BTCUSDT LIMIT @ 63000.0
+2026-07-14 20:47:37,569 | INFO     | trading_bot | Order accepted: id=21700031297 status=NEW
+2026-07-14 20:47:38,704 | INFO     | trading_bot | Order confirmed filled: id=21700031297 executedQty=0.0100 avgPrice=64237.900000
+================================================================================
+2026-07-14 20:47:45,887 | DEBUG    | trading_bot | Server time sync complete. Offset: -1432 ms
+2026-07-14 20:47:45,888 | DEBUG    | trading_bot | Binance Futures Testnet client initialized (base_url=https://testnet.binancefuture.com)
+2026-07-14 20:47:45,889 | INFO     | trading_bot | TWAP slice 1/3 submitted: 0.0100 BTCUSDT
+2026-07-14 20:47:47,261 | INFO     | trading_bot | TWAP slice 1/3 confirmed filled: 0.0100 @ 64239.60
+2026-07-14 20:47:50,598 | INFO     | trading_bot | TWAP slice 2/3 submitted: 0.0100 BTCUSDT
+2026-07-14 20:47:52,001 | INFO     | trading_bot | TWAP slice 2/3 confirmed filled: 0.0100 @ 64239.60
+2026-07-14 20:47:55,339 | INFO     | trading_bot | TWAP slice 3/3 submitted: 0.0100 BTCUSDT
+2026-07-14 20:47:56,653 | INFO     | trading_bot | TWAP slice 3/3 confirmed filled: 0.0100 @ 64238.20
+2026-07-14 20:47:56,653 | INFO     | trading_bot | TWAP summary: 3/3 slices filled, total executed 0.0300 BTCUSDT
+================================================================================

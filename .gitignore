@@ -160,5 +160,4 @@ cython_debug/
 .DS_Store
 Thumbs.db
 
-# Project-specific logs folder
-logs/
+
