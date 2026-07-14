@@ -39,6 +39,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--slices", type=int, default=None,
         help="Number of slices to split the TWAP quantity into (required for TWAP)",
     )
+    parser.add_argument(
+        "--yes", "-y", action="store_true",
+        help="Skip confirmation prompt and submit the order immediately",
+    )
     return parser
 
 
@@ -172,6 +176,7 @@ def run_interactive_mode() -> OrderRequest:
 def main() -> int:
     logger = setup_logging()
     
+    skip_confirm = False
     if len(sys.argv) == 1:
         try:
             request = run_interactive_mode()
@@ -181,6 +186,7 @@ def main() -> int:
     else:
         parser = build_parser()
         args = parser.parse_args()
+        skip_confirm = args.yes
 
         try:
             request = validate_order(
@@ -198,6 +204,16 @@ def main() -> int:
             return 1
 
     print_summary(request)
+
+    if not skip_confirm:
+        try:
+            confirm = input("Confirm and submit? [y/N]: ").strip().lower()
+            if confirm not in ["y", "yes"]:
+                print("Order cancelled.")
+                return 0
+        except (KeyboardInterrupt, EOFError):
+            print("\nOrder cancelled.")
+            return 0
 
     try:
         client = get_client()
