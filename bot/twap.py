@@ -13,15 +13,18 @@ class TwapResult:
     slices_succeeded: int
     slices_failed: int
     total_executed_qty: float
+    avg_price: float = 0.0
 
 
 def execute_twap(client, request: OrderRequest) -> TwapResult:
+    logger.info("Submitting order: %s %s %s TWAP", request.side, request.quantity, request.symbol)
     slice_qty = request.quantity / request.slices
     interval = request.duration / request.slices
 
     slices_succeeded = 0
     slices_failed = 0
     total_executed_qty = 0.0
+    cumulative_value = 0.0
 
     for i in range(request.slices):
         if i > 0:
@@ -46,6 +49,7 @@ def execute_twap(client, request: OrderRequest) -> TwapResult:
                 avg_price_val = float(avg_price_str)
                 logger.info(f"TWAP slice {i + 1}/{request.slices} confirmed filled: {exec_qty_val:.4f} @ {avg_price_val:.2f}")
                 total_executed_qty += exec_qty_val
+                cumulative_value += exec_qty_val * avg_price_val
             except ValueError:
                 logger.info(f"TWAP slice {i + 1}/{request.slices} confirmed filled: {exec_qty_str} @ {avg_price_str}")
                 total_executed_qty += slice_qty
@@ -55,6 +59,8 @@ def execute_twap(client, request: OrderRequest) -> TwapResult:
             slices_failed += 1
             logger.error(f"TWAP slice {i + 1}/{request.slices} rejected: reason={exc}")
 
+    avg_price_final = cumulative_value / total_executed_qty if total_executed_qty > 0 else 0.0
+
     # Log execution summary
     logger.info(f"TWAP summary: {slices_succeeded}/{request.slices} slices filled, total executed {total_executed_qty:.4f} {request.symbol}")
 
@@ -63,4 +69,5 @@ def execute_twap(client, request: OrderRequest) -> TwapResult:
         slices_succeeded=slices_succeeded,
         slices_failed=slices_failed,
         total_executed_qty=total_executed_qty,
+        avg_price=avg_price_final,
     )

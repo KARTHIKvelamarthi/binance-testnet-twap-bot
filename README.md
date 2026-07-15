@@ -44,6 +44,14 @@ Binance returns a status of `NEW` immediately upon order acceptance, meaning the
 *   If the order matches and fills on the exchange (e.g. `MARKET` or marketable `LIMIT` orders), it breaks early and displays the final executed quantity and average price.
 *   If the order remains open (e.g. a `LIMIT` order below/above current price), it finishes polling and gracefully displays the current open `NEW` status.
 
+### 5. Responsive Web Frontend (FastAPI & HTML/CSS/JS)
+In addition to the CLI, the bot features a lightweight, single-page web interface served by a local FastAPI backend:
+*   **Intuitive Order Entry Form**: Support for MARKET, LIMIT, and TWAP orders with dynamic input fields based on the selected type.
+*   **Real-time Validations**: Reuses the core validation logic from the bot to ensure correct inputs before submission.
+*   **Confirmation Modal**: A review card displays the order details for manual confirmation.
+*   **Recent Orders log viewer**: An automatically updated table displaying the status and details of the 10 most recent orders.
+*   **Aesthetic Responsive Layout**: Premium, glassmorphic layout styled with vanilla CSS, accommodating side-by-side display on desktop and vertical stacking on mobile/tablet viewports.
+
 ---
 
 ## Logging & Console Design System
@@ -90,7 +98,12 @@ trading_bot/
     validators.py      # Input validation (symbol, side, quantity, price, TWAP params)
     logging_config.py  # RunSeparatorFormatter, console (WARNING) and file (DEBUG) setup
   cli.py               # CLI entry point (argparse & Interactive guided wizard)
-  requirements.txt     # Dependencies (python-binance)
+  web.py               # FastAPI server backend serving Web UI & APIs
+  static/              # Web UI static assets
+    index.html         # Frontend HTML structure
+    style.css          # Vanilla CSS stylesheet (glassmorphism & responsive layout)
+    app.js             # Frontend API request/response & DOM logic
+  requirements.txt     # Dependencies (python-binance, fastapi, uvicorn)
   logs/
     trading_bot.log    # Clean structured audit log file
   README.md
@@ -131,6 +144,18 @@ python cli.py --symbol BTCUSDT --side SELL --type LIMIT --quantity 0.01 --price 
 #### TWAP Order (Splits quantity over duration)
 ```bash
 python cli.py --symbol BTCUSDT --side BUY --type TWAP --quantity 0.03 --duration 10 --slices 3 -y
+```
+
+### 4. Running the Web UI (Bonus Feature)
+The project includes a lightweight, single-page Web UI powered by a FastAPI backend (in `web.py`) and a vanilla HTML/CSS/JS frontend. Note that the CLI remains the primary required interface, and this is a bonus addition.
+
+Start the application server:
+```bash
+uvicorn web:app --reload
+```
+Then navigate to:
+```
+http://localhost:8000
 ```
 
 ---

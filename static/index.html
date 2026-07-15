@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binance Futures TWAP Bot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css?v=1.0.1">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main Card -->
+        <main class="order-card">
+            <header class="card-header">
+                <h1>Binance Futures Bot</h1>
+                <p class="subtitle">USDT-M Testnet Execution Platform</p>
+            </header>
+
+            <!-- Form View -->
+            <section id="form-view" class="view-panel active">
+                <form id="order-form" novalidate>
+                    <!-- Symbol -->
+                    <div class="form-group">
+                        <label for="symbol">Symbol</label>
+                        <input type="text" id="symbol" placeholder="e.g. BTCUSDT" autocomplete="off" required>
+                    </div>
+
+                    <!-- Side Toggle -->
+                    <div class="form-group">
+                        <label>Order Side</label>
+                        <div class="side-toggle-container">
+                            <button type="button" id="side-buy-btn" class="side-btn buy active" data-side="BUY">BUY</button>
+                            <button type="button" id="side-sell-btn" class="side-btn sell" data-side="SELL">SELL</button>
+                        </div>
+                    </div>
+
+                    <!-- Order Type Tab Selector -->
+                    <div class="form-group">
+                        <label>Order Type</label>
+                        <div class="tab-selector">
+                            <button type="button" class="tab-btn active" data-type="MARKET">MARKET</button>
+                            <button type="button" class="tab-btn" data-type="LIMIT">LIMIT</button>
+                            <button type="button" class="tab-btn" data-type="TWAP">TWAP</button>
+                        </div>
+                    </div>
+
+                    <!-- Conditional Inputs (Price / TWAP) with Smooth Height/Opacity Transition -->
+                    <div id="conditional-fields" class="conditional-fields-container hidden">
+                        <!-- LIMIT price input -->
+                        <div id="price-group" class="form-group field-group hidden">
+                            <label for="price">Price (USDT)</label>
+                            <input type="number" id="price" step="any" placeholder="0.00">
+                        </div>
+
+                        <!-- TWAP inputs -->
+                        <div id="twap-group" class="twap-fields-row hidden">
+                            <div class="form-group field-group">
+                                <label for="duration">Duration (seconds)</label>
+                                <input type="number" id="duration" placeholder="e.g. 60">
+                            </div>
+                            <div class="form-group field-group">
+                                <label for="slices">Slices</label>
+                                <input type="number" id="slices" placeholder="e.g. 5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="form-group">
+                        <label for="quantity">Quantity (Asset)</label>
+                        <input type="number" id="quantity" step="any" placeholder="0.000" required>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Review Order</button>
+                </form>
+            </section>
+
+            <!-- Confirmation View -->
+            <section id="confirm-view" class="view-panel">
+                <h2 class="view-title">Confirm Order Submission</h2>
+                <div class="summary-card">
+                    <div class="summary-row">
+                        <span class="summary-label">Symbol</span>
+                        <span class="summary-value" id="summary-symbol">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Side</span>
+                        <span class="summary-value side-label" id="summary-side">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Type</span>
+                        <span class="summary-value" id="summary-type">-</span>
+                    </div>
+                    <div class="summary-row" id="summary-price-row">
+                        <span class="summary-label">Price</span>
+                        <span class="summary-value" id="summary-price">-</span>
+                    </div>
+                    <div class="summary-row" id="summary-twap-row">
+                        <span class="summary-label">TWAP Config</span>
+                        <span class="summary-value" id="summary-twap">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Quantity</span>
+                        <span class="summary-value" id="summary-quantity">-</span>
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <button type="button" id="confirm-cancel-btn" class="secondary-btn">Cancel</button>
+                    <button type="button" id="confirm-submit-btn" class="primary-btn">Confirm & Submit</button>
+                </div>
+            </section>
+
+            <!-- Result View -->
+            <section id="result-view" class="view-panel">
+                <!-- Will be dynamically populated with Success/Failure card -->
+                <div id="result-content"></div>
+                <button type="button" id="result-reset-btn" class="primary-btn">Place Another Order</button>
+            </section>
+        </main>
+
+        <!-- Recent Orders Strip -->
+        <footer class="recent-orders-container">
+            <h2>Recent Orders</h2>
+            <div class="table-wrapper">
+                <table class="recent-orders-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Symbol</th>
+                            <th>Side</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-orders-list">
+                        <!-- Populated by JavaScript -->
+                        <tr class="empty-row">
+                            <td colspan="6">Loading recent orders...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </footer>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>
